@@ -9,9 +9,7 @@ export function getSMLRelativePath(): string {
   return path.join('FactoryGame', 'Binaries', 'Win64', 'xinput1_3.dll');
   // return path.join('loaders', 'UE4-SML-Win64-Shipping.dll');
   // bootstrapper?
-  // can they be merged into one dll?
-  // SML is the only loader and it is a proxy to the bootstrapper for the dll mods anyway
-  // or Coffee Stain will build modular so it won't be needed
+  // probably another handler for it
 }
 
 export async function getSMLDownloadLink(version: string): Promise<string> {
@@ -34,8 +32,15 @@ export class SMLHandler {
   async installSML(version: string): Promise<void> {
     if (!await this.getSMLVersion()) {
       const smlDownloadLink = await getSMLDownloadLink(version);
-      await downloadFile(smlDownloadLink,
-        path.join(this.satisfactoryPath, getSMLRelativePath()));
+      try {
+        await downloadFile(smlDownloadLink,
+          path.join(this.satisfactoryPath, getSMLRelativePath()));
+      } catch (e) {
+        if (version.startsWith('v')) {
+          throw new Error(`SML version ${version.substr(1)} not found`);
+        }
+        await this.installSML(`v${version}`);
+      }
     }
   }
 
